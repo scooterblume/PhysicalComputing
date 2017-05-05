@@ -10,7 +10,14 @@ ser = serial.Serial('COM3', 9600, timeout=.1)
 
 faceCascade = cv2.CascadeClassifier("faces.xml")
 
-video_capture = cv2.VideoCapture(1)  #might need to change based on how many webcams there are
+video_capture = cv2.VideoCapture(0)  #might need to change based on how many webcams there are
+
+##just to map the numbers to a range
+def scale(val, src, dst):
+    """
+    Scale the given value from the scale of src to the scale of dst.
+    """
+    return ((val - src[0]) / (src[1]-src[0])) * (dst[1]-dst[0]) + dst[0]
 
 
 while True:
@@ -56,6 +63,7 @@ while True:
     ## image is 480 by 640 pixels
 
     center = (320,240)
+    xCenter = 320;
     error = 30
     
     x = math.floor(x+(w/2))
@@ -63,23 +71,16 @@ while True:
 
 
     dist = (x-center[0], y-center[1])
-   		
-   
-   	####### if y dist is less than the error and not at top left corner
-    if (math.fabs(dist[1])>error and math.fabs(dist[1]) != 240):
-    	valy = -1 * math.ceil(interp(dist[1],[-240,240], [-5,5]))
-    	tmp = 'y'+str(valy)
-    	ser.write(bytes(tmp, 'utf-8'))
-
-    if(math.fabs(dist[0])>(error+35) and math.fabs(dist[0]) != 320):
-
-    	if(dist[0]<0):
-    		ser.write(b'r')# send it right
-    		sleep(.05)
-    		
-    	if(dist[0]>0):
-    		ser.write(b'l')# send it left
-    		sleep(.05)
+   	
+    maxX = 180;
+    minX = 95;
+    midX = 137;
+    ##########new stuff here#############
+    faceVal = scale(x, (0,640),(maxX,minX))
+    if (x == 0):
+        faceVal = midX;
+    serVal = 'y'+ str(int(faceVal))
+    ser.write(bytes(serVal,'utf-8'))
 
 
     print (ser.readline())
@@ -96,3 +97,4 @@ while True:
 # When everything is done, release the capture
 video_capture.release()
 cv2.destroyAllWindows()
+
